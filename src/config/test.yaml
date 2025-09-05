@@ -1,0 +1,46 @@
+data:
+  train_path: data/warmup/vihallu-warmup.csv
+  test_path: data/warmup/vihallu-warmup.csv
+  dev_ratio: 0.1
+  processing_data: True
+
+training:
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  num_workers: 0
+  num_train_epochs: 10             # Số epoch để train
+  patience: 3                      # Early stopping patience
+  learning_rate: 2e-5              # Learning rate
+  weight_decay: 0.01               # Weight decay cho optimizer
+  gradient_accumulation_steps: 1   # Nếu muốn gradient accumulation
+  output_dir: "./checkpoints"      # Thư mục lưu checkpoint
+  metric_for_best_model: "accuracy"
+
+testing:
+  per_device_eval_batch_size: 2
+  num_workers: 0
+
+tokenizer:
+  max_length: 256        # chiều dài tối đa input sequence
+  padding: max_length    # có thể đổi thành "longest" nếu muốn tiết kiệm tính toán
+  truncation: True
+  return_attention_mask: True
+
+text_embedding:
+  text_encoder: "bert-base-uncased"   
+  d_features: 768                     # hidden size của encoder (768 cho BERT-base, 1024 cho BERT-large)
+  d_model: 768                        # dimension sau projection (tùy bạn muốn giảm chiều về bao nhiêu)
+  dropout: 0.1
+
+  add_new_token: False                # có thêm vocab ngoài không
+  freeze: False                       # True thì encoder không học, False thì fine-tune
+  use_lora: True                      # bật LoRA để fine-tune nhẹ
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.1
+  lora_target_modules: ["query", "value"]   # các module áp dụng LoRA (QKV layers của Transformer)
+
+model:
+  num_labels: 3                     # số lớp phân loại
+
+model_type: triple_classifier

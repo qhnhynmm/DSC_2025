@@ -1,0 +1,48 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# PyTorch / Hugging Face
+*.pt
+*.pth
+*.safetensors
+.cache/
+transformers_cache/
+huggingface/
+checkpoints/
+output/
+
+# VSCode / IDE settings
+.vscode/
+.idea/
+
+# Build / packaging
+build/
+dist/
+wheels/
+*.egg-info
+
+# Misc
+*.bak
+*.swp
+*.tmp
+*.orig
+*.rej
+*.sublime-project
