@@ -27,9 +27,9 @@ tokenizer:
   return_attention_mask: True
 
 text_embedding:
-  text_encoder: "bert-base-uncased"   
-  d_features: 768                     # hidden size của encoder (768 cho BERT-base, 1024 cho BERT-large)
+  text_encoder: "all-mpnet-base-v2"  # model của SBERT, có thể đổi thành các model khác trong https://www.sbert.net/docs/pretrained_models.html
   d_model: 768                        # dimension sau projection (tùy bạn muốn giảm chiều về bao nhiêu)
+  d_features: 768                     # hidden size của encoder (768 cho BERT-base, 1024 cho BERT-large)
   dropout: 0.1
 
   add_new_token: False                # có thêm vocab ngoài không

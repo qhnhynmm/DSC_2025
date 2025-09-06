@@ -39,7 +39,7 @@ class Load_csv:
 # with open("C:\\Users\\cbnn7\\OneDrive\\Desktop\\DSC_2025\\src\\config\\test.yaml", "r", encoding="utf-8") as f:
 #     config = yaml.safe_load(f)
 
-# load_config = Load_Config(config)
+# load_config = Load_csv(config)
 
 # train_data, dev_data = load_config.load_data_train_dev()
 # test_data = load_config.load_data_test()

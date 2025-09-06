@@ -1,6 +1,6 @@
 import re
 import unicodedata
-import py_vncorenlp
+# import py_vncorenlp
 import pandas as pd
 from typing import List, Optional
 

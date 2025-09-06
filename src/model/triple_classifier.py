@@ -1,20 +1,15 @@
 import torch
-from torch import nn, optim
-from torch.utils.data import DataLoader
+from torch import nn
 from typing import Dict
-import yaml
-from src.text_module.sbert_embedding import SentenceTextEmbedding
-from src.data_utils.load_data import DataModule
-
+from src.text_module.sbert_embedding import SbertEmbedding  
+import sys
+import os
 
 class FusionLayer(nn.Module):
+    """Fusion triple embedding bằng MultiheadAttention"""
     def __init__(self, d_model: int, num_heads: int = 4, dropout: float = 0.1):
         super().__init__()
-        self.attention = nn.MultiheadAttention(
-            embed_dim=d_model,
-            num_heads=num_heads,
-            batch_first=True
-        )
+        self.attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, batch_first=True)
         self.norm = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
@@ -25,13 +20,14 @@ class FusionLayer(nn.Module):
 
 
 class TripleClassifier(nn.Module):
+    """Triple input classifier dùng SBERT chuẩn"""
     def __init__(self, config: Dict):
         super().__init__()
-        self.encoder = SentenceTextEmbedding(config)
+        self.encoder = SbertEmbedding(config)  
         d_model = config["text_embedding"]["d_model"]
         num_labels = config["model"]["num_labels"]
 
-        self.fusion = FusionLayer(d_model, num_heads=4, dropout=0.1)
+        self.fusion = FusionLayer(d_model)
         self.pooling = nn.AdaptiveAvgPool1d(1)
 
         self.classifier = nn.Sequential(
@@ -42,32 +38,29 @@ class TripleClassifier(nn.Module):
         )
 
     def forward(self, batch):
-        if len(batch) == 5:  # train
-            context, prompt, response, labels, idx = batch
-        else:  # val/test
-            context, prompt, response, idx = batch
-            labels = None
+        embeddings, *rest = self.encoder(batch)  # embeddings: [batch, 3, d_model]
 
-        emb_context = self.encoder(list(context))
-        emb_prompt = self.encoder(list(prompt))
-        emb_response = self.encoder(list(response))
-
-        embeddings = torch.stack([emb_context, emb_prompt, emb_response], dim=1)
         fused = self.fusion(embeddings)
-        pooled = self.pooling(fused.transpose(1, 2)).squeeze(-1)
-        logits = self.classifier(pooled)
+        pooled = self.pooling(fused.transpose(1, 2)).squeeze(-1)  # [batch, d_model]
 
-        if labels is not None:
+        logits = self.classifier(pooled)  # [batch, num_labels]
+
+        if len(rest) == 2:  # train
+            labels, idx = rest
             return logits, labels, idx
-        return logits, idx
+        else:  # val/test
+            idx = rest[0]
+            return logits, idx
+
 
 def create_model(config: Dict) -> nn.Module:
     return TripleClassifier(config)
 
-    
+
+# --- Demo ---
 if __name__ == "__main__":
     import yaml
-    from src.data_utils.load_data import DataModule
+    from data_utils.load_data import DataModule
 
     with open("C:\\Users\\cbnn7\\OneDrive\\Desktop\\DSC_2025\\src\\config\\test.yaml", "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)

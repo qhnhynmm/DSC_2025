@@ -27,7 +27,6 @@ class NLI_Task:
         # Data
         self.data_module = DataModule(config)
         self.train_loader, self.val_loader = self.data_module.get_train_val_loaders()
-        self.test_loader = self.data_module.get_test_loader()
 
         # Model
         self.model = TripleClassifier(config)
