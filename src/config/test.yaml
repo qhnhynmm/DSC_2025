@@ -10,7 +10,7 @@ training:
   num_workers: 4
   num_train_epochs: 100             # Số epoch để train
   patience: 3                      # Early stopping patience
-  learning_rate: 3e-5              # Learning rate
+  learning_rate: 3e-4              # Learning rate
   weight_decay: 0.01               # Weight decay cho optimizer
   gradient_accumulation_steps: 1   # Nếu muốn gradient accumulation
   output_dir: "./checkpoints"      # Thư mục lưu checkpoint
