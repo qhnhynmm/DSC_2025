@@ -1,6 +1,6 @@
 data:
-  train_path: data/warmup/vihallu-warmup.csv
-  test_path: data/warmup/vihallu-warmup.csv
+  train_path: data/train/vihallu-train.csv
+  test_path: data/test/vihallu-public-test.csv
   dev_ratio: 0.1
   processing_data: True
 
