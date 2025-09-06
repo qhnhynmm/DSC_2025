@@ -5,8 +5,8 @@ data:
   processing_data: True
 
 training:
-  per_device_train_batch_size: 2
-  per_device_eval_batch_size: 2
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
   num_workers: 0
   num_train_epochs: 10             # Số epoch để train
   patience: 3                      # Early stopping patience
@@ -17,7 +17,7 @@ training:
   metric_for_best_model: "accuracy"
 
 testing:
-  per_device_eval_batch_size: 2
+  per_device_eval_batch_size: 32
   num_workers: 0
 
 tokenizer:
@@ -30,7 +30,7 @@ text_embedding:
   text_encoder: "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"  # model của SBERT, có thể đổi thành các model khác trong https://www.sbert.net/docs/pretrained_models.html
   d_model: 768                        # dimension sau projection (tùy bạn muốn giảm chiều về bao nhiêu)
   d_features: 768                     # hidden size của encoder (768 cho BERT-base, 1024 cho BERT-large)
-  dropout: 0.1
+  dropout: 0.3
 
   add_new_token: False                # có thêm vocab ngoài không
   freeze: False                       # True thì encoder không học, False thì fine-tune
