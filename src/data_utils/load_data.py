@@ -12,15 +12,17 @@ class TextDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        idx = self.data.loc[index, 'id']
-        context = str(self.data.loc[index, 'context'])
-        prompt = str(self.data.loc[index, 'prompt'])
-        response = str(self.data.loc[index, 'response'])
+        row = self.data.iloc[index]  
+        idx = row['id']
+        context = str(row['context'])
+        prompt = str(row['prompt'])
+        response = str(row['response'])
         if self.with_labels: 
-            label = self.data.loc[index, 'label']
+            label = row['label']
             return context, prompt, response, label, idx
         else:
             return context, prompt, response, idx
+
 
 class DataModule:
     def __init__(self, config):
