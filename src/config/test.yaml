@@ -21,13 +21,13 @@ testing:
   num_workers: 0
 
 tokenizer:
-  max_length: 256        # chiều dài tối đa input sequence
+  max_length: 512        # chiều dài tối đa input sequence
   padding: max_length    # có thể đổi thành "longest" nếu muốn tiết kiệm tính toán
   truncation: True
   return_attention_mask: True
 
 text_embedding:
-  text_encoder: "all-mpnet-base-v2"  # model của SBERT, có thể đổi thành các model khác trong https://www.sbert.net/docs/pretrained_models.html
+  text_encoder: "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"  # model của SBERT, có thể đổi thành các model khác trong https://www.sbert.net/docs/pretrained_models.html
   d_model: 768                        # dimension sau projection (tùy bạn muốn giảm chiều về bao nhiêu)
   d_features: 768                     # hidden size của encoder (768 cho BERT-base, 1024 cho BERT-large)
   dropout: 0.1

@@ -1,21 +1,46 @@
 import torch
 from torch import nn
-from typing import List, Dict, Optional
+from typing import Dict
 from sentence_transformers import SentenceTransformer
-import sys
 from src.data_utils.load_data import DataModule
 import yaml
 
 
 class SbertEmbedding(nn.Module):
-    """Dùng SBERT chuẩn để embed context, prompt, response -> [batch, 3, d_model]"""
+    """Dùng SBERT để embed context, prompt, response -> [batch, 3, d_model]"""
     def __init__(self, config: Dict):
         super().__init__()
-        model_name = config["text_embedding"]["text_encoder"] 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.encoder = SentenceTransformer(model_name)
-        self.encoder = self.encoder.to(device)
-        self.device = device
+        model_name = config["text_embedding"]["text_encoder"]
+        self.encoder = SentenceTransformer(model_name)  
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.encoder = self.encoder.to(self.device)
+
+        # freeze SBERT nếu config yêu cầu
+        self.freeze = config["text_embedding"].get("freeze", False)
+        if self.freeze:
+            for param in self.encoder.parameters():
+                param.requires_grad = False
+            print("🔒 SBERT encoder đã freeze (chỉ dùng embedding cố định).")
+        else:
+            for param in self.encoder.parameters():
+                param.requires_grad = True
+            print("🔓 SBERT encoder mở full train (fine-tune toàn bộ).")
+
+    def encode_freeze(self, texts):
+        """Chế độ freeze: dùng encode() không gradient"""
+        return self.encoder.encode(
+            list(texts),
+            convert_to_tensor=True,
+            device=self.device,
+            show_progress_bar=False
+        )
+
+    def encode_trainable(self, texts):
+        """Chế độ trainable: tokenize + forward() để có gradient"""
+        features = self.encoder.tokenize(list(texts))
+        features = {k: v.to(self.device) for k, v in features.items()}
+        out = self.encoder(features)
+        return out["sentence_embedding"]
 
     def forward(self, batch):
         if len(batch) == 5:  # train
@@ -23,13 +48,16 @@ class SbertEmbedding(nn.Module):
         else:  # val/test
             context, prompt, response, idx = batch
 
-        # Encode từng input
-        with torch.no_grad():
-            emb_context = self.encoder.encode(list(context), convert_to_tensor=True, device=self.device)
-            emb_prompt = self.encoder.encode(list(prompt), convert_to_tensor=True, device=self.device)
-            emb_response = self.encoder.encode(list(response), convert_to_tensor=True, device=self.device)
+        if self.freeze:
+            with torch.no_grad():
+                emb_context = self.encode_freeze(context)
+                emb_prompt = self.encode_freeze(prompt)
+                emb_response = self.encode_freeze(response)
+        else:
+            emb_context = self.encode_trainable(context)
+            emb_prompt = self.encode_trainable(prompt)
+            emb_response = self.encode_trainable(response)
 
-        # Stack lại [batch, 3, d_model]
         embeddings = torch.stack([emb_context, emb_prompt, emb_response], dim=1)
 
         if len(batch) == 5:
@@ -50,6 +78,7 @@ if __name__ == "__main__":
         embeddings, labels, idx = model(batch)
         print("Embedding shape:", embeddings.shape)  # [batch, 3, d_model]
         break
+
 
 # import torch
 # from torch import nn

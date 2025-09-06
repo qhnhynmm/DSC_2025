@@ -20,7 +20,6 @@ class NLI_Task:
         self.patience = int(config['training']['patience'])
         self.lr = float(config['training']['learning_rate'])
         self.weight_decay = float(config['training']['weight_decay'])
-        self.grad_acc_steps = int(config['training'].get('gradient_accumulation_steps', 1))
         self.save_dir = str(config['training']['output_dir'])
         self.best_metric = str(config['training']['metric_for_best_model'])
 
@@ -64,19 +63,20 @@ class NLI_Task:
             self.model.train()
             train_loss = 0
 
-            for step, batch in enumerate(tqdm(self.train_loader, desc=f"Epoch {epoch+1}")):
+            # tqdm cho training loop
+            train_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.num_epochs} [Train]", leave=False)
+            for step, batch in enumerate(train_bar):
                 logits, labels, _ = self.model(batch)
                 labels = labels.to(self.device)
-                loss = loss_fn(logits, labels) / self.grad_acc_steps
+                loss = loss_fn(logits, labels)
 
                 self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+                self.optimizer.zero_grad()
 
-                if (step + 1) % self.grad_acc_steps == 0:
-                    self.scaler.step(self.optimizer)
-                    self.scaler.update()
-                    self.optimizer.zero_grad()
-
-                train_loss += loss.item() * self.grad_acc_steps
+                train_loss += loss.item()
+                train_bar.set_postfix(loss=loss.item())
 
             train_loss /= len(self.train_loader)
             self.scheduler.step()
@@ -84,8 +84,9 @@ class NLI_Task:
             # Validation
             self.model.eval()
             valid_acc, valid_f1 = 0, 0
+            val_bar = tqdm(self.val_loader, desc=f"Epoch {epoch+1}/{self.num_epochs} [Valid]", leave=False)
             with torch.no_grad():
-                for batch in self.val_loader:
+                for batch in val_bar:
                     logits, labels, _ = self.model(batch)
                     labels = labels.to(self.device)
                     preds = torch.argmax(logits, dim=-1)
@@ -95,7 +96,11 @@ class NLI_Task:
             valid_acc /= len(self.val_loader)
             valid_f1 /= len(self.val_loader)
 
-            print(f"Epoch {epoch+1}: Train Loss={train_loss:.4f}, Valid Acc={valid_acc:.4f}, Valid F1={valid_f1:.4f}")
+            # In kết quả epoch
+            tqdm.write(f"Epoch {epoch+1}: "
+                       f"Train Loss={train_loss:.4f}, "
+                       f"Valid Acc={valid_acc:.4f}, "
+                       f"Valid F1={valid_f1:.4f}")
 
             # Save last checkpoint
             torch.save({
@@ -114,16 +119,17 @@ class NLI_Task:
                     'optimizer_state_dict': self.optimizer.state_dict(),
                     'score': best_score
                 }, os.path.join(self.save_dir, "best_model.pth"))
-                print(f"Saved best model with {self.best_metric}: {best_score:.4f}")
+                tqdm.write(f"✅ Saved best model with {self.best_metric}: {best_score:.4f}")
                 patience_counter = 0
             else:
                 patience_counter += 1
 
             if patience_counter >= self.patience:
-                print(f"Early stopping at epoch {epoch+1}")
+                tqdm.write(f"⏹️ Early stopping at epoch {epoch+1}")
                 break
 
-        print("Training complete.")
+        tqdm.write("🎉 Training complete.")
+
 
 
 if __name__ == "__main__":
